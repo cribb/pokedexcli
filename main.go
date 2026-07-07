@@ -1,5 +1,17 @@
 package main
 
+type cliConfig struct {
+	nextUrl     string
+	previousUrl string
+}
+
 func main() {
-	goREPL()
+
+	config := cliConfig{
+		nextUrl:     "",
+		previousUrl: "",
+	}
+
+	goREPL(&config)
+
 }
