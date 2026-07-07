@@ -1,3 +1,4 @@
 *.exe
 pokedexcli
 *.log
+sandbox/**
