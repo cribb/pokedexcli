@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/cribb/pokedexcli/internal/pokeapi"
 )
 
 // Type definitions occur at "package level" (global scope)
@@ -82,35 +84,25 @@ func getCommands() map[string]cliCommand {
 
 func commandMap(config *cliConfig) error {
 
-	// fmt.Println()
+	var location_area pokeapi.LocationAreaList
+	var body []byte
+	var ok bool
+	var err error
 
 	if config.nextUrl == "" {
 		config.nextUrl = "https://pokeapi.co/api/v2/location-area/"
 	}
 
-	// fmt.Printf(" --> config: %v\n", config)
+	body, ok = config.cache.Get(config.nextUrl)
+	if !ok {
+		body, err = getDataFromNetwork(config.nextUrl)
 
-	var location_area LocationAreaList
-
-	res, err := http.Get(config.nextUrl)
-	if err != nil {
-		fmt.Printf("Error in GET functionality.\n")
-		// return nil, fmt.Errorf("error creating request: %w", err)
+		if err == nil {
+			config.cache.Add(config.nextUrl, body)
+		}
 	}
 
-	body, err := io.ReadAll(res.Body)
-	// fmt.Printf(" --> body: %v, err: %v\n", res.Body, err)
-	defer res.Body.Close()
-
-	if res.StatusCode > 299 {
-		fmt.Printf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-		// log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil {
-		return nil //, err
-	}
-
-	if err := json.Unmarshal(body, &location_area); err != nil {
+	if err = json.Unmarshal(body, &location_area); err != nil {
 		return err
 	}
 
@@ -135,33 +127,23 @@ func commandMap(config *cliConfig) error {
 
 func commandMapb(config *cliConfig) error {
 
-	// fmt.Println()
-
 	if config.previousUrl == "" {
 		fmt.Printf("you're on the first page\n")
 		return nil
 	}
 
-	// fmt.Printf(" --> config: %v\n", config)
+	var location_area pokeapi.LocationAreaList
+	var body []byte
+	var ok bool
+	var err error
 
-	var location_area LocationAreaList
+	body, ok = config.cache.Get(config.previousUrl)
+	if !ok {
+		body, err = getDataFromNetwork(config.previousUrl)
 
-	res, err := http.Get(config.previousUrl)
-	if err != nil {
-		fmt.Printf("Error in GET functionality.\n")
-		// return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	// fmt.Printf(" --> body: %v, err: %v\n", res.Body, err)
-	defer res.Body.Close()
-
-	if res.StatusCode > 299 {
-		fmt.Printf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-		// log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil {
-		return nil //, err
+		if err == nil {
+			config.cache.Add(config.previousUrl, body)
+		}
 	}
 
 	if err := json.Unmarshal(body, &location_area); err != nil {
@@ -207,4 +189,25 @@ func commandExit(config *cliConfig) error {
 func cleanInput(text string) []string {
 	words := strings.Fields(strings.ToLower(text))
 	return words
+}
+
+func getDataFromNetwork(url string) ([]byte, error) {
+	res, err := http.Get(url)
+	if err != nil {
+		fmt.Printf("Error in GET functionality.\n")
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	body, err := io.ReadAll(res.Body)
+	// fmt.Printf(" --> body: %v, err: %v\n", res.Body, err)
+	defer res.Body.Close()
+
+	if res.StatusCode > 299 {
+		fmt.Printf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+		// log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
