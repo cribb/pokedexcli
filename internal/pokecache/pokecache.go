@@ -1,6 +1,7 @@
 package pokecache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -42,6 +43,20 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 		return nil, false
 	}
 	return entry.val, true
+}
+
+func (c *Cache) Print() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if len(c.entries) == 0 {
+		fmt.Println("  No entries.")
+		return
+	}
+
+	for key := range c.entries {
+		fmt.Printf("  %v\n", key)
+	}
 }
 
 func (c *Cache) reapLoop() {
