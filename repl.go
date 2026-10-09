@@ -102,10 +102,15 @@ func getCommands() map[string]cliCommand {
 			description: "catch pokemon",
 			callback:    commandCatch,
 		},
-		"print": {
-			name:        "print",
+		"pokedex": {
+			name:        "pokedex",
 			description: "print pokedex",
 			callback:    commandPrint,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "prints stats on <pokemon>",
+			callback:    commandInspect,
 		},
 	}
 	return commands
@@ -235,9 +240,15 @@ func commandExplore(config *cliConfig, cmdArgs []string) error {
 }
 
 func commandPrint(config *cliConfig, cmdArgs []string) error {
-	fmt.Println(" === Pokedex contents ===")
+	if len(config.pokedex) == 0 {
+		fmt.Println(" Your Pokedex is empty!")
+		return nil
+	}
+
+	// fmt.Println(" === Pokedex contents ===")
+	fmt.Println(" Your Pokedex:")
 	for _, pokemon := range config.pokedex {
-		fmt.Printf("  %v\n", pokemon.Name)
+		fmt.Printf("  - %v\n", pokemon.Name)
 	}
 	return nil
 }
@@ -267,6 +278,46 @@ func commandCatch(config *cliConfig, cmdArgs []string) error {
 
 	fmt.Printf(" Throwing a Pokeball at %v... \n", pokeTarget)
 	throwPokeball(config, pokemon)
+
+	return nil
+}
+
+func commandInspect(config *cliConfig, cmdArgs []string) error {
+	if len(cmdArgs) == 0 {
+		fmt.Println(" No pokemon specified")
+		return nil
+	}
+	pokename := cmdArgs[0]
+
+	pokemon, ok := config.pokedex[pokename]
+	if !ok {
+		fmt.Printf("you have not caught that pokemon.")
+		return nil
+	}
+
+	// stats := pokemon.Stats
+
+	fmt.Printf(" Name: %v\n", pokemon.Name)
+	fmt.Printf(" Height: %v\n", pokemon.Height)
+	fmt.Printf(" Weight: %v\n", pokemon.Weight)
+	fmt.Printf(" Stats:\n")
+
+	for _, item := range pokemon.Stats {
+		fmt.Printf("   -%v: %v\n", item.Stat.Name, item.BaseStat)
+	}
+
+	fmt.Printf(" Types:\n")
+	for _, item := range pokemon.Types {
+		fmt.Printf("   -%v\n", item.Type.Name)
+	}
+
+	// fmt.Printf("   -hp: %v\n", stats)
+	// fmt.Printf("   -attack: ", foo)
+	// fmt.Printf("   -defense: ", foo)
+	// fmt.Printf("   -special-attack: ", foo)
+	// fmt.Printf("   -special-defense: ", foo)
+	// fmt.Printf("   -speed: ", foo)
+	// fmt.Printf(" Types:\n")
 
 	return nil
 }
